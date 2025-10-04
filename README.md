@@ -164,6 +164,38 @@ GET /api/v1/instructors/:instructorId/live-classes
 DELETE /api/v1/live-classes/:classId
 ```
 
+### Webhook Endpoints
+
+#### Receive Zoom Webhook
+```
+POST /api/v1/webhooks/zoom
+
+Headers:
+- x-zm-signature: <webhook signature>
+- x-zm-request-timestamp: <timestamp>
+
+Body:
+{
+  "event": "meeting.started",
+  "event_id": "unique-event-id",
+  "payload": {
+    "object": {
+      "id": 123456789
+    }
+  }
+}
+```
+
+#### Get Webhook Events
+```
+GET /api/v1/webhooks/events?status=processed&limit=50
+```
+
+#### Get Specific Webhook Event
+```
+GET /api/v1/webhooks/events/:eventId
+```
+
 ## Core Service: schedule_live_class
 
 The main service function for scheduling live classes with Zoom integration and calendar invites:
@@ -294,16 +326,50 @@ Global error handling middleware catches and logs all errors:
 - Server errors return 500
 - All errors are logged with context
 
+## Webhook Integration
+
+The platform includes comprehensive webhook handling for Zoom meeting events with built-in idempotency, logging, and error handling.
+
+### Supported Events
+
+- **meeting.started** - Automatically updates class status to "active"
+- **meeting.ended** - Automatically updates class status to "completed"
+- **meeting.updated** - Syncs schedule changes from Zoom
+- **meeting.deleted** - Automatically marks class as "cancelled"
+- **meeting.participant_joined/left** - Tracks attendance
+
+### Webhook Endpoint
+
+```
+POST /api/v1/webhooks/zoom
+```
+
+### Key Features
+
+- ✅ **Idempotency** - Prevents duplicate processing
+- ✅ **Signature Verification** - HMAC SHA-256 security
+- ✅ **Comprehensive Logging** - Received → Processing → Processed → Applied
+- ✅ **Error Handling** - Graceful failure recovery
+- ✅ **Automatic Retries** - Exponential backoff (1s, 2s, 4s)
+- ✅ **Event Monitoring** - API endpoints to track webhook status
+
+### Configuration
+
+Set in `.env`:
+```bash
+ZOOM_WEBHOOK_SECRET=your_webhook_secret_here
+```
+
+See [WEBHOOK_IMPLEMENTATION.md](WEBHOOK_IMPLEMENTATION.md) for complete documentation.
+
 ## Future Enhancements
 
 - Database integration (PostgreSQL/MongoDB)
 - User authentication and authorization
 - WebSocket support for real-time updates
-- Zoom webhook handling
 - Recording management
-- Attendance tracking
-- Email notifications
-- Calendar integration
+- Advanced attendance analytics
+- Real-time notifications
 
 ## Contributing
 
