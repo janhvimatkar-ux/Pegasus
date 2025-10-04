@@ -16,19 +16,23 @@ describe('LiveClassService', () => {
       const courseId = 'course-456';
       const startTime = futureDate.toISOString();
 
-      const liveClass = await liveClassService.schedule_live_class(
+      const result = await liveClassService.schedule_live_class(
         instructorId,
         courseId,
         startTime
       );
 
-      expect(liveClass).toBeInstanceOf(LiveClass);
-      expect(liveClass.instructorId).toBe(instructorId);
-      expect(liveClass.courseId).toBe(courseId);
-      expect(liveClass.startTime).toBe(startTime);
-      expect(liveClass.zoomMeetingId).toBeDefined();
-      expect(liveClass.zoomJoinUrl).toBeDefined();
-      expect(liveClass.zoomStartUrl).toBeDefined();
+      expect(result.liveClass).toBeInstanceOf(LiveClass);
+      expect(result.liveClass.instructorId).toBe(instructorId);
+      expect(result.liveClass.courseId).toBe(courseId);
+      expect(result.liveClass.startTime).toBe(startTime);
+      expect(result.liveClass.zoomMeetingId).toBeDefined();
+      expect(result.liveClass.zoomJoinUrl).toBeDefined();
+      expect(result.liveClass.zoomStartUrl).toBeDefined();
+      expect(result.zoomMeeting).toBeDefined();
+      expect(result.zoomMeeting.id).toBeDefined();
+      expect(result.zoomMeeting.joinUrl).toBeDefined();
+      expect(result.invitations).toBeNull();
     });
 
     it('should schedule a live class with custom duration', async () => {
@@ -40,14 +44,73 @@ describe('LiveClassService', () => {
       const startTime = futureDate.toISOString();
       const options = { duration: 90 };
 
-      const liveClass = await liveClassService.schedule_live_class(
+      const result = await liveClassService.schedule_live_class(
         instructorId,
         courseId,
         startTime,
         options
       );
 
-      expect(liveClass.duration).toBe(90);
+      expect(result.liveClass.duration).toBe(90);
+    });
+
+    it('should schedule a live class with participants and send invites', async () => {
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 7);
+
+      const instructorId = 'instructor-123';
+      const courseId = 'course-456';
+      const startTime = futureDate.toISOString();
+      const options = {
+        duration: 60,
+        participants: [
+          { name: 'Alice', email: 'alice@example.com', role: 'student' },
+          { name: 'Bob', email: 'bob@example.com', role: 'student' }
+        ]
+      };
+
+      const result = await liveClassService.schedule_live_class(
+        instructorId,
+        courseId,
+        startTime,
+        options
+      );
+
+      expect(result.liveClass).toBeDefined();
+      expect(result.zoomMeeting).toBeDefined();
+      expect(result.invitations).toBeDefined();
+      expect(result.invitations.success).toBe(true);
+      expect(result.invitations.recipients).toBe(2);
+    });
+
+    it('should skip calendar invites when sendCalendarInvite is false', async () => {
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 7);
+
+      const result = await liveClassService.schedule_live_class(
+        'instructor-123',
+        'course-456',
+        futureDate.toISOString(),
+        {
+          participants: [{ name: 'Alice', email: 'alice@example.com' }],
+          sendCalendarInvite: false
+        }
+      );
+
+      expect(result.invitations).toBeNull();
+    });
+
+    it('should skip calendar invites when no participants provided', async () => {
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 7);
+
+      const result = await liveClassService.schedule_live_class(
+        'instructor-123',
+        'course-456',
+        futureDate.toISOString()
+      );
+
+      expect(result.invitations).toBeNull();
     });
 
     it('should throw error when instructorId is missing', async () => {
@@ -87,16 +150,16 @@ describe('LiveClassService', () => {
       const futureDate = new Date();
       futureDate.setDate(futureDate.getDate() + 7);
 
-      const scheduled = await liveClassService.schedule_live_class(
+      const result = await liveClassService.schedule_live_class(
         'instructor-123',
         'course-456',
         futureDate.toISOString()
       );
 
-      const retrieved = liveClassService.getLiveClass(scheduled.id);
+      const retrieved = liveClassService.getLiveClass(result.liveClass.id);
 
       expect(retrieved).toBeDefined();
-      expect(retrieved.id).toBe(scheduled.id);
+      expect(retrieved.id).toBe(result.liveClass.id);
     });
 
     it('should return null for non-existent class', () => {

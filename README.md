@@ -166,43 +166,80 @@ DELETE /api/v1/live-classes/:classId
 
 ## Core Service: schedule_live_class
 
-The main service function for scheduling live classes:
+The main service function for scheduling live classes with Zoom integration and calendar invites:
 
 ```javascript
 const liveClassService = require('./src/services/liveClassService');
 
-// Schedule a live class
-const liveClass = await liveClassService.schedule_live_class(
-  'instructor-123',    // instructorId
-  'course-456',        // courseId
-  '2025-12-31T10:00:00Z',  // startTime (ISO 8601)
+// Schedule a live class with calendar invites
+const result = await liveClassService.schedule_live_class(
+  'instructor-123',           // instructorId
+  'course-456',               // courseId
+  '2025-12-31T10:00:00Z',     // startTime (ISO 8601)
   {
-    duration: 60,      // optional, minutes
+    duration: 60,             // optional, minutes (default: 60)
     topic: 'Advanced Mathematics',  // optional
-    timezone: 'UTC'    // optional
+    timezone: 'UTC',          // optional (default: UTC)
+    
+    // NEW: Calendar invite participants
+    participants: [
+      { name: 'Alice Smith', email: 'alice@example.com', role: 'student' },
+      { name: 'Bob Jones', email: 'bob@example.com', role: 'student' }
+    ],
+    
+    // Control invite sending (default: true)
+    sendCalendarInvite: true
   }
 );
+
+// Access the comprehensive response
+console.log(result.liveClass.id);              // Class ID
+console.log(result.zoomMeeting.joinUrl);       // Student join URL
+console.log(result.zoomMeeting.startUrl);      // Instructor start URL
+console.log(result.zoomMeeting.password);      // Meeting password
+console.log(result.invitations?.success);      // Invite status
+console.log(result.invitations?.recipients);   // Number of invites sent
 ```
 
 ### Features:
-- Validates all input parameters
-- Creates a Zoom meeting (mock or real based on configuration)
-- Returns complete class information including Zoom URLs
-- Logs all operations for debugging
+- ✅ **Validates all input parameters** with comprehensive validation
+- ✅ **Creates Zoom meetings** with proper API request payloads
+- ✅ **Handles API responses** with error management
+- ✅ **Generates calendar invites** (.ics files) following iCalendar standard
+- ✅ **Sends email invitations** with HTML formatting and attachments
+- ✅ **Uses mock API data** for development (no Zoom account needed)
+- ✅ **Returns complete information** including class, meeting, and invite status
+- ✅ **Comprehensive logging** for all operations
 
-## Mock Zoom API
+## Mock Services
 
-In development mode or when Zoom API credentials are not configured, the service uses mock Zoom data:
+In development mode or when credentials are not configured, the service uses mock data:
 
-- Generates realistic meeting IDs, URLs, and passwords
-- Simulates API latency
+### Mock Zoom API:
+- Generates realistic meeting IDs (9 digits)
+- Creates valid-looking Zoom URLs with passwords
+- Simulates API latency (500ms)
 - Returns properly formatted Zoom meeting objects
 - Perfect for development and testing without real Zoom account
 
-To use real Zoom API:
+### Mock Email Service:
+- Logs email content without sending
+- Generates realistic message IDs
+- Simulates email delivery delay
+- Perfect for testing calendar invite functionality
+- Check logs to see generated email content and .ics files
+
+### Using Real Services:
+
+**Zoom API:**
 1. Set `ZOOM_API_KEY` and `ZOOM_API_SECRET` in `.env`
 2. Implement OAuth token retrieval in `zoomService.js`
-3. Set `NODE_ENV=production`
+3. Service automatically detects and uses real API
+
+**Email Service:**
+1. Configure SMTP settings in your email service provider
+2. Update `emailService.js` with real email implementation
+3. Service automatically sends real emails with calendar attachments
 
 ## Logging
 

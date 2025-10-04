@@ -9,7 +9,15 @@ const scheduleClassSchema = Joi.object({
   startTime: Joi.date().iso().greater('now').required(),
   duration: Joi.number().min(15).max(480).optional(),
   topic: Joi.string().optional(),
-  timezone: Joi.string().optional()
+  timezone: Joi.string().optional(),
+  participants: Joi.array().items(
+    Joi.object({
+      name: Joi.string().required(),
+      email: Joi.string().email().required(),
+      role: Joi.string().valid('instructor', 'student').optional()
+    })
+  ).optional(),
+  sendCalendarInvite: Joi.boolean().optional()
 });
 
 const classIdSchema = Joi.object({
@@ -36,8 +44,8 @@ async function scheduleClass(req, res) {
 
     const { instructorId, courseId, startTime: classStartTime, ...options } = value;
 
-    // Schedule the class
-    const liveClass = await liveClassService.schedule_live_class(
+    // Schedule the class with Zoom meeting and calendar invites
+    const result = await liveClassService.schedule_live_class(
       instructorId,
       courseId,
       classStartTime,
@@ -48,7 +56,12 @@ async function scheduleClass(req, res) {
 
     res.status(201).json({
       success: true,
-      data: liveClass.toJSON()
+      data: {
+        liveClass: result.liveClass.toJSON(),
+        zoomMeeting: result.zoomMeeting,
+        invitations: result.invitations
+      },
+      message: 'Live class scheduled successfully'
     });
   } catch (error) {
     logger.logError(error, { 

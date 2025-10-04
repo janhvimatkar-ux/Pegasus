@@ -18,16 +18,17 @@ async function runExamples() {
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + 7); // 7 days from now
     
-    const liveClass1 = await liveClassService.schedule_live_class(
+    const result1 = await liveClassService.schedule_live_class(
       'instructor-alice',
       'course-mathematics-101',
       futureDate.toISOString()
     );
     
-    logger.info('Live class scheduled:', liveClass1.toJSON());
+    logger.info('Live class scheduled:', result1.liveClass.toJSON());
     console.log('\n✅ Class scheduled successfully!');
-    console.log('Zoom Join URL:', liveClass1.zoomJoinUrl);
-    console.log('Zoom Start URL:', liveClass1.zoomStartUrl);
+    console.log('Zoom Join URL:', result1.liveClass.zoomJoinUrl);
+    console.log('Zoom Start URL:', result1.liveClass.zoomStartUrl);
+    console.log('Meeting Password:', result1.zoomMeeting.password || 'N/A');
     
     // Example 2: Schedule a class with custom duration and topic
     logger.info('\nExample 2: Scheduling with custom options');
@@ -35,20 +36,25 @@ async function runExamples() {
     const futureDate2 = new Date();
     futureDate2.setDate(futureDate2.getDate() + 14); // 14 days from now
     
-    const liveClass2 = await liveClassService.schedule_live_class(
+    const result2 = await liveClassService.schedule_live_class(
       'instructor-bob',
       'course-physics-201',
       futureDate2.toISOString(),
       {
         duration: 90,
         topic: 'Quantum Mechanics - Introduction',
-        timezone: 'America/New_York'
+        timezone: 'America/New_York',
+        participants: [
+          { name: 'Alice Smith', email: 'alice@example.com', role: 'student' },
+          { name: 'Bob Johnson', email: 'bob@example.com', role: 'student' }
+        ]
       }
     );
     
-    logger.info('Live class with options scheduled:', liveClass2.toJSON());
-    console.log('\n✅ Custom class scheduled!');
-    console.log('Duration:', liveClass2.duration, 'minutes');
+    logger.info('Live class with options scheduled:', result2.liveClass.toJSON());
+    console.log('\n✅ Custom class scheduled with calendar invites!');
+    console.log('Duration:', result2.liveClass.duration, 'minutes');
+    console.log('Invitations sent:', result2.invitations ? result2.invitations.recipients : 0);
     
     // Example 3: Retrieve classes by course
     logger.info('\nExample 3: Getting all classes for a course');
@@ -65,7 +71,7 @@ async function runExamples() {
     // Example 5: Get a specific class
     logger.info('\nExample 5: Getting a specific class by ID');
     
-    const retrievedClass = liveClassService.getLiveClass(liveClass1.id);
+    const retrievedClass = liveClassService.getLiveClass(result1.liveClass.id);
     if (retrievedClass) {
       console.log('✅ Retrieved class:', retrievedClass.id);
       console.log('Status:', retrievedClass.status);
@@ -74,14 +80,14 @@ async function runExamples() {
     // Example 6: Cancel a class
     logger.info('\nExample 6: Cancelling a live class');
     
-    const cancelledClass = await liveClassService.cancelLiveClass(liveClass2.id);
+    const cancelledClass = await liveClassService.cancelLiveClass(result2.liveClass.id);
     console.log('✅ Class cancelled:', cancelledClass.id);
     console.log('New status:', cancelledClass.status);
     
     // Example 7: Update class status
     logger.info('\nExample 7: Updating class status');
     
-    const updatedClass = liveClassService.updateStatus(liveClass1.id, 'active');
+    const updatedClass = liveClassService.updateStatus(result1.liveClass.id, 'active');
     console.log('✅ Status updated to:', updatedClass.status);
     
     // Summary
