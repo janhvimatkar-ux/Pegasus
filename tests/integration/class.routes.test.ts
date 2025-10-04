@@ -21,6 +21,7 @@ describe('Class Routes', () => {
         instructorId: 'inst1',
         courseId: 'course1',
         startTime: '2025-10-28T10:00:00.000Z',
+        participants: ['test@example.com'],
       });
 
     expect(response.status).toBe(201);

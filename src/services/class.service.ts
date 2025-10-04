@@ -1,5 +1,6 @@
 import logger from '../utils/logger';
 import zoomService from './zoom.service';
+import notificationService from './notification.service';
 
 interface LiveClass {
   classId: string;
@@ -12,7 +13,8 @@ interface LiveClass {
 const schedule_live_class = async (
   instructorId: string,
   courseId: string,
-  startTime: Date
+  startTime: Date,
+  participants: string[]
 ): Promise<LiveClass> => {
   logger.info(
     `Scheduling live class for instructor ${instructorId}, course ${courseId} at ${startTime}`
@@ -31,6 +33,15 @@ const schedule_live_class = async (
     startTime,
     meetingUrl: meetingDetails.joinUrl,
   };
+
+  await notificationService.sendCalendarInvite({
+    title: `Live class for ${courseId}`,
+    startTime,
+    duration: 60,
+    participants,
+    meetingUrl: meetingDetails.joinUrl,
+    courseId,
+  });
 
   logger.info(`Successfully scheduled class ${newClass.classId}`);
   return newClass;

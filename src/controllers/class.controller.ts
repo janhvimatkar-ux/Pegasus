@@ -4,16 +4,17 @@ import logger from '../utils/logger';
 
 const scheduleClass = async (req: Request, res: Response) => {
   try {
-    const { instructorId, courseId, startTime } = req.body;
+    const { instructorId, courseId, startTime, participants } = req.body;
 
-    if (!instructorId || !courseId || !startTime) {
+    if (!instructorId || !courseId || !startTime || !participants) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
     
     const newClass = await classService.schedule_live_class(
         instructorId,
         courseId,
-        new Date(startTime)
+        new Date(startTime),
+        participants
     );
 
     return res.status(201).json(newClass);
