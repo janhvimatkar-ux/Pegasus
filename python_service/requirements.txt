@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+pydantic
+python-dotenv
+loguru
+requests
+pyjwt
+ics
+pydantic-settings
+pytest
+pytest-mock
+pytest-asyncio
+httpx
+freezegun
